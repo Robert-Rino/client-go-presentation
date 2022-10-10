@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	//rbacv1 "k8s.io/api/rbac/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiWatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -63,6 +68,38 @@ func main() {
 			fmt.Printf("Skip older events. CreationTime: %s CurrentTime: %s\n", creationTime.Time.String(), time.Now().Add(20*time.Minute).String())
 			continue
 		}
+
+		// Serialize struct to json
+		b, err := json.Marshal(event.Object)
+		if err != nil {
+			fmt.Println("error on json", err)
+			continue
+		}
+		fmt.Println("qqq", string(b))
+
+		// Post to endpoint.
+		notifyUrl, _ := url.Parse("https://07e6-180-176-189-245.jp.ngrok.io")
+
+		querys := notifyUrl.Query()
+		querys.Add("type", string(event.Type))
+
+		notifyUrl.RawQuery = querys.Encode()
+
+		req, err := http.NewRequest("POST", notifyUrl.String(), bytes.NewBuffer(b))
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		fmt.Println("response Status:", resp.Status)
+		fmt.Println("response Headers:", resp.Header)
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("response Body:", string(body))
+
 		fmt.Printf("----INCOMING EVENT\n%#v %#v\n----\n", event.Type, event.Object)
 		time.Sleep(20 * time.Millisecond)
 	}
