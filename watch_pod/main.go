@@ -41,12 +41,17 @@ func main() {
 		panic(err)
 	}
 
-	timeOut := int64(10)
+	// Define a watch function that ListWatcher will use later.
+	// Here we only look pod in "default" namespaces.
 	watchFunc := func(options metav1.ListOptions) (apiWatch.Interface, error) {
 		// Return watcher with 10m timeout
-		return clientset.CoreV1().Pods("default").Watch(context.Background(), metav1.ListOptions{TimeoutSeconds: &timeOut})
+		// timeOut := int64(10)
+		// return clientset.CoreV1().Pods("default").Watch(context.Background(), metav1.ListOptions{TimeoutSeconds: &timeOut})
+		// Return watcher on lebelSelector app=swag
+		return clientset.CoreV1().Pods("default").Watch(context.Background(), metav1.ListOptions{LabelSelector: "app=swag"})
 	}
 
+	// Start watching
 	fmt.Printf("----Start watching----\n")
 	w, err := watch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: watchFunc})
 	if err != nil {
@@ -71,8 +76,8 @@ func main() {
 		// Handle event
 		eventHandler(event)
 
-		fmt.Printf("----INCOMING EVENT\n%#v %#v\n----\n", event.Type, event.Object)
-		time.Sleep(20 * time.Millisecond)
+		// fmt.Printf("----INCOMING EVENT\n%#v %#v\n----\n", event.Type, event.Object)
+		// time.Sleep(20 * time.Millisecond)
 	}
 }
 
