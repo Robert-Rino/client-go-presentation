@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -69,38 +68,43 @@ func main() {
 			continue
 		}
 
-		// Serialize struct to json
-		b, err := json.Marshal(event.Object)
-		if err != nil {
-			fmt.Println("error on json", err)
-			continue
-		}
-		fmt.Println("qqq", string(b))
-
-		// Post to endpoint.
-		notifyUrl, _ := url.Parse("https://07e6-180-176-189-245.jp.ngrok.io")
-
-		querys := notifyUrl.Query()
-		querys.Add("type", string(event.Type))
-
-		notifyUrl.RawQuery = querys.Encode()
-
-		req, err := http.NewRequest("POST", notifyUrl.String(), bytes.NewBuffer(b))
-		req.Header.Set("Content-Type", "application/json")
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-
-		fmt.Println("response Status:", resp.Status)
-		fmt.Println("response Headers:", resp.Header)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("response Body:", string(body))
+		// Handle event
+		eventHandler(event)
 
 		fmt.Printf("----INCOMING EVENT\n%#v %#v\n----\n", event.Type, event.Object)
 		time.Sleep(20 * time.Millisecond)
 	}
+}
+
+func eventHandler(event apiWatch.Event) {
+	// Serialize struct to json
+	b, err := json.Marshal(event.Object)
+	if err != nil {
+		fmt.Println("error on json", err)
+		return
+	}
+
+	// Post to endpoint.
+	notifyUrl, _ := url.Parse("https://07e6-180-176-189-245.jp.ngrok.io")
+
+	querys := notifyUrl.Query()
+	querys.Add("type", string(event.Type))
+
+	notifyUrl.RawQuery = querys.Encode()
+
+	req, err := http.NewRequest("POST", notifyUrl.String(), bytes.NewBuffer(b))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	// fmt.Println("response Status:", resp.Status)
+	// fmt.Println("response Headers:", resp.Header)
+	// body, _ := ioutil.ReadAll(resp.Body)
+	// fmt.Println("response Body:", string(body))
+
 }
