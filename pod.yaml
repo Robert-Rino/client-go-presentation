@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: test
   labels:
-    app: test
+    app: swag
 spec:
   restartPolicy: Never
   containers:

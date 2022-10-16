@@ -90,7 +90,7 @@ func eventHandler(event apiWatch.Event) {
 	}
 
 	// Post to endpoint.
-	notifyUrl, _ := url.Parse("https://07e6-180-176-189-245.jp.ngrok.io")
+	notifyUrl, _ := url.Parse("https://398e-59-124-114-73.jp.ngrok.io")
 
 	querys := notifyUrl.Query()
 	querys.Add("type", string(event.Type))
